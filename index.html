@@ -721,7 +721,7 @@
     </section>
   </main>
 
-  <script src="./vendor/jszip.min.js"></script>
+  <script src="./vendor/jszip.min.js?v=3.10.1-pages-fix"></script>
   <script>
     /* DATA */
     const FILE = "./Cash_Management.xlsx";
@@ -850,9 +850,24 @@
     function rowValues(sheet,row,columns){return columns.map(col=>cell(sheet,`${col}${row}`))}
     const columnIndex=address=>{const letters=String(address).match(/^[A-Z]+/i)?.[0].toUpperCase()||"A";return [...letters].reduce((sum,char)=>sum*26+char.charCodeAt(0)-64,0)-1};
     const xmlDocument=xml=>new DOMParser().parseFromString(xml,"application/xml");
+    let zipLoaderPromise=null;
+    async function ensureExcelReader(){
+      if(typeof window.JSZip!=="undefined")return window.JSZip;
+      if(!zipLoaderPromise){
+        zipLoaderPromise=new Promise((resolve,reject)=>{
+          const script=document.createElement("script");
+          script.src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+          script.crossOrigin="anonymous";
+          script.onload=()=>window.JSZip?resolve(window.JSZip):reject(new Error("Le lecteur Excel n'a pas pu démarrer."));
+          script.onerror=()=>reject(new Error("Le lecteur Excel est indisponible. Vérifiez votre connexion puis réessayez."));
+          document.head.appendChild(script);
+        });
+      }
+      return zipLoaderPromise;
+    }
     async function readXlsx(buffer){
-      if(typeof JSZip==="undefined")throw new Error("Le lecteur Excel local n'est pas disponible.");
-      const zip=await JSZip.loadAsync(buffer);
+      const ZipReader=await ensureExcelReader();
+      const zip=await ZipReader.loadAsync(buffer);
       const workbookDoc=xmlDocument(await zip.file("xl/workbook.xml").async("text"));
       const relDoc=xmlDocument(await zip.file("xl/_rels/workbook.xml.rels").async("text"));
       const rels=Object.fromEntries([...relDoc.getElementsByTagNameNS("*","Relationship")].map(node=>[node.getAttribute("Id"),node.getAttribute("Target")]));
