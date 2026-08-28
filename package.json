@@ -1,0 +1,11 @@
+{
+  "name": "build-your-edge-cash-management",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cockpit BFR et Cash Management synchronisé avec Excel.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs"
+  }
+}
